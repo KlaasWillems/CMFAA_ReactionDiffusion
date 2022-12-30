@@ -17,7 +17,7 @@ class ReactionDiffusionPDE(ABC):
         self.res: Optional[npt.NDArray] = None
         self.discretize(discretization, L)
 
-    def discretize(self, discretization: npt.NDArray, L: int) -> None:
+    def discretize(self, discretization: npt.NDArray, L: float) -> None:
         # generate spatially discretized PDE. Assume periodic boundary conditions
         s: Tuple = np.shape(discretization)
 
@@ -80,12 +80,15 @@ class ReactionDiffusionPDE(ABC):
     
     @abstractmethod
     def Fex(self, u: npt.NDArray, t: float) -> npt.NDArray:
-        # Evaluate explicit reaction term at u at time t. Writes result into res.
+        # Evaluate explicit reaction term at u at time t. 
         pass
 
     def Fim(self, u: npt.NDArray, t: float) -> npt.NDArray:
-        # Evaluate implicit reaction term at u at time t. Writes result into res.
-        res: npt.ArrayLike = self.K.dot(u)
+        # Evaluate implicit reaction term at u at time t. 
+        res: npt.NDArray = self.K.dot(u)
         return res 
+
+    def F(self, u: npt.NDArray, t: float) -> npt.NDArray:
+        return self.Fim(u, t) + self.Fex(u, t)
     
 
