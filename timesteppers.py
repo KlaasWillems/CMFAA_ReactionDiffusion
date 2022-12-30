@@ -2,7 +2,7 @@ from abc import ABC, abstractmethod
 import numpy as np
 import numpy.typing as npt
 from ReactionDiffusionPDE import MATRIX_TYPE, MATRIX_TYPE_STR, ReactionDiffusionPDE
-from typing import Optional
+from typing import Optional, Tuple
 from scipy.sparse import eye
 from scipy.sparse.linalg import spsolve, factorized
 
@@ -27,11 +27,11 @@ class IMEXEuler(RD_timestepper):
         # Integrate from t_init to t_max in N-1 time steps with u0 as initial condition
         self.time: npt.NDArray = np.linspace(tMin, tMax, N)
         dt: float = (tMax - tMin)/(N-1)
-        ODESize: int = np.shape(u0)[0]
-        self.res: npt.NDArray = np.empty((N, ODESize))
+        self.res: npt.NDArray = np.empty((N, u0.size))
 
         # step up linear system for implicit step 
-        I: MATRIX_TYPE = eye(ODESize, format=MATRIX_TYPE_STR) # type:ignore
+        s: Tuple = np.shape(self.RDEquation.K) # type: ignore  
+        I: MATRIX_TYPE = eye(m=s[0], n=s[1], format=MATRIX_TYPE_STR) # type: ignore
         A: MATRIX_TYPE = I - dt*self.RDEquation.K
         solve = factorized(A)
 
@@ -43,7 +43,8 @@ class IMEXEuler(RD_timestepper):
             uTemp = self.res[i-1, :] + dt*uTemp
 
             # Implicit step of Fim
-            self.res[i, :] = solve(uTemp)
+            self.res[i, :s[0]] = solve(uTemp[:s[0]])
+            self.res[i, s[0]:] = solve(uTemp[s[0]:])
         return self.res
 
 
@@ -55,11 +56,11 @@ class IMEXSP(RD_timestepper):
         # Integrate from t_init to t_max in N-1 time steps with u0 as initial condition
         self.time: npt.NDArray = np.linspace(tMin, tMax, N)
         dt: float = (tMax - tMin)/(N-1)
-        ODESize: int = np.shape(u0)[0]
-        self.res: npt.NDArray = np.empty((N, ODESize))
+        self.res: npt.NDArray = np.empty((N, u0.size))
 
         # step up linear system for implicit step 
-        I: MATRIX_TYPE = eye(ODESize, format=MATRIX_TYPE_STR) # type:ignore
+        s: Tuple = np.shape(self.RDEquation.K) # type: ignore  
+        I: MATRIX_TYPE = eye(m=s[0], n=s[1], format=MATRIX_TYPE_STR) # type:ignore
         A: MATRIX_TYPE = I - dt*self.RDEquation.K
         solve = factorized(A)
 
@@ -67,7 +68,8 @@ class IMEXSP(RD_timestepper):
         uTemp: npt.NDArray = np.empty_like(u0)
         for i in range(1, N):
             # Implicit step
-            uTemp = solve(self.res[i-1, :])
+            uTemp[:s[0]] = solve(self.res[i-1, :s[0]])
+            uTemp[s[0]:] = solve(self.res[i-1, s[0]:])
 
             # Explicit step
             self.res[i, :] = self.res[i-1, :] + dt*(self.RDEquation.Fex(self.res[i-1, 0], self.time[i-1]) + self.RDEquation.Fim(uTemp, self.time[i])) 
@@ -82,11 +84,11 @@ class IMEXTrap(RD_timestepper):
         # Integrate from t_init to t_max in N-1 time steps with u0 as initial condition
         self.time: npt.NDArray = np.linspace(tMin, tMax, N)
         dt: float = (tMax - tMin)/(N-1)
-        ODESize: int = np.shape(u0)[0]
-        self.res: npt.NDArray = np.empty((N, ODESize))
+        self.res: npt.NDArray = np.empty((N, u0.size))
 
         # step up linear system for implicit step 
-        I: MATRIX_TYPE = eye(ODESize, format=MATRIX_TYPE_STR) # type:ignore
+        s: Tuple = np.shape(self.RDEquation.K) # type: ignore  
+        I: MATRIX_TYPE = eye(m=s[0], n=s[1], format=MATRIX_TYPE_STR) # type:ignore
         A: MATRIX_TYPE = I - dt*self.RDEquation.K/2
         solve = factorized(A)
 
@@ -96,7 +98,8 @@ class IMEXTrap(RD_timestepper):
         for i in range(1, N):
             # Implicit step
             uTemp1 = self.res[i-1, :] + dt*self.RDEquation.Fex(self.res[i-1, :], self.time[i-1]) + self.RDEquation.Fim(self.res[i-1, :], self.time[i-1])*dt/2
-            uTemp2 = solve(uTemp1)
+            uTemp2[:s[0]] = solve(uTemp1[:s[0]])
+            uTemp2[s[0]:] = solve(uTemp1[s[0]:])
 
             # Explicit step
             self.res[i, :] = self.res[i-1, :] + (self.RDEquation.F(self.res[i-1, :], self.time[i-1]) + self.RDEquation.F(uTemp2, self.time[i]))*dt/2
