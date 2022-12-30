@@ -2,8 +2,11 @@ from abc import ABC, abstractmethod
 import numpy as np
 import numpy.typing as npt
 from typing import Optional, Tuple
-from scipy.sparse import diags, csr_matrix, hstack, vstack
+from scipy.sparse import diags, csr_matrix, hstack, vstack, csc_matrix
 import matplotlib.pyplot as plt
+
+MATRIX_TYPE = csr_matrix
+MATRIX_TYPE_STR = 'csr'
 
 class ReactionDiffusionPDE(ABC):
     def __init__(self, discretization: npt.NDArray, L: int, Du: float, Dv: float) -> None:
@@ -14,7 +17,6 @@ class ReactionDiffusionPDE(ABC):
         self.res: Optional[npt.NDArray] = None
         self.discretize(discretization, L)
 
-
     def discretize(self, discretization: npt.NDArray, L: int) -> None:
         # generate spatially discretized PDE. Assume periodic boundary conditions
         s: Tuple = np.shape(discretization)
@@ -23,8 +25,8 @@ class ReactionDiffusionPDE(ABC):
         if len(s) == 1: # 1D 
             Nx: int = discretization[0] # Nx discretisation points in x direction
             dx: float = L/(Nx-1)
-            z: csr_matrix = csr_matrix((Nx, Nx))
-            temp: csr_matrix = diags([1, 1, -2, 1, 1], [-Nx+1, -1, 0, 1, Nx-1], format='csr', shape=(Nx, Nx))/(dx**2) # type: ignore
+            z: MATRIX_TYPE = MATRIX_TYPE((Nx, Nx))
+            temp: MATRIX_TYPE = diags([1, 1, -2, 1, 1], [-Nx+1, -1, 0, 1, Nx-1], format=MATRIX_TYPE_STR, shape=(Nx, Nx))/(dx**2) # type: ignore
             left = vstack([temp*self.Du, z])
             right = vstack([z, temp*self.Dv])
             self.K = hstack([left, right])
@@ -51,7 +53,6 @@ class ReactionDiffusionPDE(ABC):
             plt.show()
         else:
             raise NotImplementedError 
-
 
     def plotAnimation(self, time: npt.NDArray, res: npt.NDArray) -> None:
         if len(np.shape(self.discretization)):

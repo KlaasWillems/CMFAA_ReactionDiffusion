@@ -36,8 +36,7 @@ GS: GrayScott = GrayScott(discretization, L, Du, Dv, F, k)
 imex1: IMEXEuler = IMEXEuler(GS)
 
 # Integrate
-imex1.integrate(tmin, tmax, Nt, u0)
-res: Optional[npt.NDArray] = imex1.res
+res = imex1.integrate(tmin, tmax, Nt, u0)
 # GS.plot(imex1.time, 0, imex1.res)
 # GS.plotAnimation(imex1.time, imex1.res)
 

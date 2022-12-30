@@ -10,7 +10,7 @@ class GrayScott(ReactionDiffusionPDE):
         self.F: float = F
 
     def Fex(self, u: npt.NDArray, t: float) -> npt.NDArray:
-        # Evaluate explicit reaction term at u at time t. Writes result into res.
+        # Evaluate explicit reaction term at u at time t. 
         res: npt.NDArray = np.empty_like(u)
         m: int = np.shape(u)[0]
         m2: int = int(m/2)
@@ -29,7 +29,7 @@ class Schnakeberg(ReactionDiffusionPDE):
         self.b: float = b
 
     def Fex(self, u: npt.NDArray, t: float) -> npt.NDArray:
-        # Evaluate explicit reaction term at u at time t. Writes result into res.
+        # Evaluate explicit reaction term at u at time t.
         res: npt.NDArray = np.empty_like(u)
         m: int = np.shape(u)[0]
         m2: int = int(m/2)
@@ -44,5 +44,5 @@ class HeatEquation(ReactionDiffusionPDE):
         super().__init__(discretization, L, Du, Dv)
 
     def Fex(self, u: npt.NDArray, t: float) -> npt.NDArray:
-        # Evaluate explicit reaction term at u at time t. Writes result into res.
+        # Evaluate explicit reaction term at u at time t. 
         return np.zeros_like(u)
