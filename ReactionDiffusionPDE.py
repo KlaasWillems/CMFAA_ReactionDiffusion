@@ -5,8 +5,8 @@ from typing import Optional, Tuple
 from scipy.sparse import diags, csr_matrix, hstack, vstack, csc_matrix
 import matplotlib.pyplot as plt
 
-MATRIX_TYPE = csr_matrix
-MATRIX_TYPE_STR = 'csr'
+MATRIX_TYPE = csc_matrix
+MATRIX_TYPE_STR = 'csc'
 
 class ReactionDiffusionPDE(ABC):
     def __init__(self, discretization: npt.NDArray, L: int, Du: float, Dv: float) -> None:

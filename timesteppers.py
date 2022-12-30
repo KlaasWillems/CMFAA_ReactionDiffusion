@@ -4,7 +4,7 @@ import numpy.typing as npt
 from ReactionDiffusionPDE import MATRIX_TYPE, MATRIX_TYPE_STR, ReactionDiffusionPDE
 from typing import Optional
 from scipy.sparse import eye
-from scipy.sparse.linalg import spsolve
+from scipy.sparse.linalg import spsolve, factorized
 
 
 class RD_timestepper(ABC):
@@ -33,6 +33,7 @@ class IMEXEuler(RD_timestepper):
         # step up linear system for implicit step 
         I: MATRIX_TYPE = eye(ODESize, format=MATRIX_TYPE_STR) # type:ignore
         A: MATRIX_TYPE = I - dt*self.RDEquation.K
+        solve = factorized(A)
 
         self.res[0, :] = u0
         uTemp: npt.NDArray = np.empty_like(u0)
@@ -42,7 +43,7 @@ class IMEXEuler(RD_timestepper):
             uTemp = self.res[i-1, :] + dt*uTemp
 
             # Implicit step of Fim
-            self.res[i, :] = spsolve(A, uTemp)
+            self.res[i, :] = solve(uTemp)
         return self.res
 
 
@@ -60,12 +61,13 @@ class IMEXSP(RD_timestepper):
         # step up linear system for implicit step 
         I: MATRIX_TYPE = eye(ODESize, format=MATRIX_TYPE_STR) # type:ignore
         A: MATRIX_TYPE = I - dt*self.RDEquation.K
+        solve = factorized(A)
 
         self.res[0, :] = u0
         uTemp: npt.NDArray = np.empty_like(u0)
         for i in range(1, N):
             # Implicit step
-            uTemp = spsolve(A, self.res[i-1, :])
+            uTemp = solve(self.res[i-1, :])
 
             # Explicit step
             self.res[i, :] = self.res[i-1, :] + dt*(self.RDEquation.Fex(self.res[i-1, 0], self.time[i-1]) + self.RDEquation.Fim(uTemp, self.time[i])) 
@@ -86,6 +88,7 @@ class IMEXTrap(RD_timestepper):
         # step up linear system for implicit step 
         I: MATRIX_TYPE = eye(ODESize, format=MATRIX_TYPE_STR) # type:ignore
         A: MATRIX_TYPE = I - dt*self.RDEquation.K/2
+        solve = factorized(A)
 
         self.res[0, :] = u0
         uTemp1: npt.NDArray = np.empty_like(u0)
@@ -93,7 +96,7 @@ class IMEXTrap(RD_timestepper):
         for i in range(1, N):
             # Implicit step
             uTemp1 = self.res[i-1, :] + dt*self.RDEquation.Fex(self.res[i-1, :], self.time[i-1]) + self.RDEquation.Fim(self.res[i-1, :], self.time[i-1])*dt/2
-            uTemp2 = spsolve(A, uTemp1)
+            uTemp2 = solve(uTemp1)
 
             # Explicit step
             self.res[i, :] = self.res[i-1, :] + (self.RDEquation.F(self.res[i-1, :], self.time[i-1]) + self.RDEquation.F(uTemp2, self.time[i]))*dt/2
