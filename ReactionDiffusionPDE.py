@@ -2,7 +2,7 @@ from abc import ABC, abstractmethod
 import numpy as np
 import numpy.typing as npt
 from typing import Optional, Tuple
-from scipy.sparse import diags, csr_matrix, hstack, vstack, csc_matrix
+from scipy.sparse import diags, csr_matrix, hstack, vstack, csc_matrix, eye, kron
 import matplotlib.pyplot as plt
 
 MATRIX_TYPE = csc_matrix
@@ -19,24 +19,29 @@ class ReactionDiffusionPDE(ABC):
 
     def discretize(self, discretization: npt.NDArray, L: float) -> None:
         # generate spatially discretized PDE. Assume periodic boundary conditions
-        s: Tuple = np.shape(discretization)
+        Nx: int = discretization[0] # Nx discretisation points in x direction
+        dx: float = L/(Nx-1)
 
         # Assemble matrix
-        if len(s) == 1: # 1D 
-            Nx: int = discretization[0] # Nx discretisation points in x direction
-            dx: float = L/(Nx-1)
+        if len(discretization) == 1: # 1D 
             z: MATRIX_TYPE = MATRIX_TYPE((Nx, Nx))
-            temp: MATRIX_TYPE = diags([1, 1, -2, 1, 1], [-Nx+1, -1, 0, 1, Nx-1], format=MATRIX_TYPE_STR, shape=(Nx, Nx))/(dx**2) # type: ignore
-            left = vstack([temp*self.Du, z])
-            right = vstack([z, temp*self.Dv])
+            laplacian1D: MATRIX_TYPE = diags([1, 1, -2, 1, 1], [-Nx+1, -1, 0, 1, Nx-1], format=MATRIX_TYPE_STR, shape=(Nx, Nx))/(dx**2) # type: ignore
+            left = vstack([laplacian1D*self.Du, z])
+            right = vstack([z, laplacian1D*self.Dv])
             self.K = hstack([left, right])
-        elif len(s) == 2: # 2D 
-            raise NotImplementedError
+        elif len(discretization) == 2: # 2D 
+            assert discretization[0] == discretization[1], 'Only square grids allowed'
+            laplacian2D: MATRIX_TYPE = diags([1, 1, -2, 1, 1], [-Nx+1, -1, 0, 1, Nx-1], format=MATRIX_TYPE_STR, shape=(Nx, Nx))/(dx**2) # type: ignore
+            I: MATRIX_TYPE = eye(Nx, format=MATRIX_TYPE_STR)  # type: ignore
+            temp2: MATRIX_TYPE = kron(I, laplacian2D, format=MATRIX_TYPE_STR) + kron(laplacian2D, I, format=MATRIX_TYPE_STR)
+            z: MATRIX_TYPE = MATRIX_TYPE((Nx**2, Nx**2))
+            self.K = hstack([vstack([temp2*self.Du, z]), vstack([z, temp2*self.Dv])])
         else:
             raise NotImplementedError
 
     def plot(self, time: npt.NDArray, timeIndex: int, res: npt.NDArray) -> None:
-        if len(np.shape(self.discretization)):
+        # Plot solution at timeIndex
+        if len(self.discretization):
             Nt: int = np.shape(res)[0]
             Nx: int = self.discretization[0]
             pos: npt.NDArray = np.linspace(0, self.L, Nx)
@@ -55,7 +60,8 @@ class ReactionDiffusionPDE(ABC):
             raise NotImplementedError 
 
     def plotAnimation(self, time: npt.NDArray, res: npt.NDArray) -> None:
-        if len(np.shape(self.discretization)):
+        # Plot u(x, t)
+        if len(self.discretization):
             Nt: int = np.shape(res)[0]
             Nx: int = self.discretization[0]
             pos: npt.NDArray = np.linspace(0, self.L, Nx)
@@ -89,6 +95,7 @@ class ReactionDiffusionPDE(ABC):
         return res 
 
     def F(self, u: npt.NDArray, t: float) -> npt.NDArray:
+        # Evaluate implicit and explicit terms together
         return self.Fim(u, t) + self.Fex(u, t)
     
 

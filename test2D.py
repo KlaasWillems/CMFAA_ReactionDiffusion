@@ -11,7 +11,7 @@ import matplotlib.pyplot as plt
 L: int = 2
 Nx: int = 5
 Nt: int = 10
-discretization: npt.NDArray = np.array([Nx], dtype=int)
+discretization: npt.NDArray = np.array([Nx, Nx], dtype=int)
 tmin: float = 0.0 
 tmax: float = 0.5
 
@@ -40,10 +40,6 @@ imex1: IMEXEuler = IMEXEuler(GS)
 res = imex1.integrate(tmin, tmax, Nt, u0)
 # GS.plot(imex1.time, 0, imex1.res)
 # GS.plotAnimation(imex1.time, imex1.res)
-
-
-# z: csc_matrix = csc_matrix((Nx, Nx))
-# temp: csc_matrix = diags([1, 1, -2, 1, 1], [-Nx+1, -1, 0, 1, Nx-1], format=MATRIX_TYPE_STR, shape=(Nx, Nx))/(dx**2) # type: ignore
 
 
 # print(type(GS.K))
