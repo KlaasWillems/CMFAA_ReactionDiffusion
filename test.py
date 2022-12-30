@@ -1,0 +1,43 @@
+from turtle import up
+from timesteppers import IMEXEuler
+from RDPDE_examples import GrayScott
+import numpy as np
+import numpy.typing as npt
+from scipy.sparse.linalg import spsolve
+
+# discretization parameters
+L: int = 2
+Nx: int = 5
+Nt: int = 10
+discretization: npt.NDArray = np.array([Nx], dtype=int)
+tmin: float = 0.0 
+tmax: float = 0.5
+
+# Model parameters
+F: float = 0.046
+k: float = 0.063
+Du: float = 2e-5
+Dv: float = 1e-5
+
+# Initial condition
+x: npt.NDArray = np.linspace(0, L, Nx)
+upart: npt.NDArray = np.ones((Nx, ))
+vpart: npt.NDArray = np.zeros_like(upart)
+perturb: npt.NDArray = np.exp(-25*np.power(x-1, 2))*0.5
+upart = upart - perturb
+vpart = vpart + perturb
+u0: npt.NDArray = np.hstack((upart, vpart))
+
+# Make PDE object
+GS: GrayScott = GrayScott(discretization, L, Du, Dv, F, k)
+
+# Make time stepper
+imex1: IMEXEuler = IMEXEuler(GS)
+
+# Integrate
+imex1.integrate(tmin, tmax, Nt, u0)
+
+# print(type(GS.K))
+# print(GS.K.toarray())
+# temp: npt.NDArray = np.random.rand(Nx, 1)
+# spsolve(GS.K, temp)
