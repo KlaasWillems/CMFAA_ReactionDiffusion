@@ -30,10 +30,12 @@ class IMEXEuler(RD_timestepper):
         self.res: npt.NDArray = np.empty((N, u0.size))
 
         # step up linear system for implicit step 
-        s: Tuple = np.shape(self.RDEquation.K) # type: ignore  
+        s: Tuple = np.shape(self.RDEquation.Ku) # type: ignore  
         I: MATRIX_TYPE = eye(m=s[0], n=s[1], format=MATRIX_TYPE_STR) # type: ignore
-        A: MATRIX_TYPE = I - dt*self.RDEquation.K
-        solve = factorized(A)
+        Au: MATRIX_TYPE = I - dt*self.RDEquation.Ku
+        Av: MATRIX_TYPE = I - dt*self.RDEquation.Kv
+        solveU = factorized(Au)
+        solveV = factorized(Av)
 
         self.res[0, :] = u0
         uTemp: npt.NDArray = np.empty_like(u0)
@@ -43,8 +45,8 @@ class IMEXEuler(RD_timestepper):
             uTemp = self.res[i-1, :] + dt*uTemp
 
             # Implicit step of Fim
-            self.res[i, :s[0]] = solve(uTemp[:s[0]])
-            self.res[i, s[0]:] = solve(uTemp[s[0]:])
+            self.res[i, :s[0]] = solveU(uTemp[:s[0]])
+            self.res[i, s[0]:] = solveV(uTemp[s[0]:])
         return self.res
 
 
@@ -59,17 +61,19 @@ class IMEXSP(RD_timestepper):
         self.res: npt.NDArray = np.empty((N, u0.size))
 
         # step up linear system for implicit step 
-        s: Tuple = np.shape(self.RDEquation.K) # type: ignore  
+        s: Tuple = np.shape(self.RDEquation.Ku) # type: ignore  
         I: MATRIX_TYPE = eye(m=s[0], n=s[1], format=MATRIX_TYPE_STR) # type:ignore
-        A: MATRIX_TYPE = I - dt*self.RDEquation.K
-        solve = factorized(A)
+        Au: MATRIX_TYPE = I - dt*self.RDEquation.Ku
+        Av: MATRIX_TYPE = I - dt*self.RDEquation.Kv
+        solveU = factorized(Au)
+        solveV = factorized(Av)
 
         self.res[0, :] = u0
         uTemp: npt.NDArray = np.empty_like(u0)
         for i in range(1, N):
             # Implicit step
-            uTemp[:s[0]] = solve(self.res[i-1, :s[0]])
-            uTemp[s[0]:] = solve(self.res[i-1, s[0]:])
+            uTemp[:s[0]] = solveU(self.res[i-1, :s[0]])
+            uTemp[s[0]:] = solveV(self.res[i-1, s[0]:])
 
             # Explicit step
             self.res[i, :] = self.res[i-1, :] + dt*(self.RDEquation.Fex(self.res[i-1, 0], self.time[i-1]) + self.RDEquation.Fim(uTemp, self.time[i])) 
@@ -87,10 +91,12 @@ class IMEXTrap(RD_timestepper):
         self.res: npt.NDArray = np.empty((N, u0.size))
 
         # step up linear system for implicit step 
-        s: Tuple = np.shape(self.RDEquation.K) # type: ignore  
+        s: Tuple = np.shape(self.RDEquation.Ku) # type: ignore  
         I: MATRIX_TYPE = eye(m=s[0], n=s[1], format=MATRIX_TYPE_STR) # type:ignore
-        A: MATRIX_TYPE = I - dt*self.RDEquation.K/2
-        solve = factorized(A)
+        Au: MATRIX_TYPE = I - dt*self.RDEquation.Ku/2
+        Av: MATRIX_TYPE = I - dt*self.RDEquation.Kv/2
+        solveU = factorized(Au)
+        solveV = factorized(Av)
 
         self.res[0, :] = u0
         uTemp1: npt.NDArray = np.empty_like(u0)
@@ -98,8 +104,8 @@ class IMEXTrap(RD_timestepper):
         for i in range(1, N):
             # Implicit step
             uTemp1 = self.res[i-1, :] + dt*self.RDEquation.Fex(self.res[i-1, :], self.time[i-1]) + self.RDEquation.Fim(self.res[i-1, :], self.time[i-1])*dt/2
-            uTemp2[:s[0]] = solve(uTemp1[:s[0]])
-            uTemp2[s[0]:] = solve(uTemp1[s[0]:])
+            uTemp2[:s[0]] = solveU(uTemp1[:s[0]])
+            uTemp2[s[0]:] = solveV(uTemp1[s[0]:])
 
             # Explicit step
             self.res[i, :] = self.res[i-1, :] + (self.RDEquation.F(self.res[i-1, :], self.time[i-1]) + self.RDEquation.F(uTemp2, self.time[i]))*dt/2

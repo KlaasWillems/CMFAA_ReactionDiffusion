@@ -24,12 +24,9 @@ class ReactionDiffusionPDE(ABC):
 
         # Assemble matrix
         if len(discretization) == 1: # 1D 
-            z: MATRIX_TYPE = MATRIX_TYPE((Nx, Nx))
-            self.K: MATRIX_TYPE = diags([1, 1, -2, 1, 1], [-Nx+1, -1, 0, 1, Nx-1], format=MATRIX_TYPE_STR, shape=(Nx, Nx))/(dx**2) # type: ignore
-
-            # left = vstack([laplacian1D*self.Du, z])
-            # right = vstack([z, laplacian1D*self.Dv])
-            # self.K = hstack([left, right])
+            Laplacian: MATRIX_TYPE = diags([1, 1, -2, 1, 1], [-Nx+1, -1, 0, 1, Nx-1], format=MATRIX_TYPE_STR, shape=(Nx, Nx))/(dx**2) # type: ignore
+            self.Ku: MATRIX_TYPE = Laplacian*self.Du  # type: ignore
+            self.Kv: MATRIX_TYPE = Laplacian*self.Dv  # type: ignore
         elif len(discretization) == 2: # 2D 
             assert discretization[0] == discretization[1], 'Only square grids allowed'
             raise NotImplementedError
@@ -95,8 +92,8 @@ class ReactionDiffusionPDE(ABC):
         # Evaluate implicit reaction term at u at time t. 
         s: int = int(u.size/2)
         res: npt.NDArray = np.empty_like(u)
-        res[:s] = self.K.dot(u[:s])
-        res[s:] = self.K.dot(u[s:])
+        res[:s] = self.Ku.dot(u[:s])
+        res[s:] = self.Kv.dot(u[s:])
         return res 
 
     def F(self, u: npt.NDArray, t: float) -> npt.NDArray:
