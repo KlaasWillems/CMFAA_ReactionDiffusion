@@ -1,9 +1,10 @@
-from turtle import up
 from timesteppers import IMEXEuler
-from RDPDE_examples import GrayScott
+from RDModels import GrayScott
 import numpy as np
 import numpy.typing as npt
 from scipy.sparse.linalg import spsolve
+from typing import Optional
+import matplotlib.pyplot as plt
 
 # discretization parameters
 L: int = 2
@@ -36,8 +37,13 @@ imex1: IMEXEuler = IMEXEuler(GS)
 
 # Integrate
 imex1.integrate(tmin, tmax, Nt, u0)
+res: Optional[npt.NDArray] = imex1.res
+# GS.plot(imex1.time, 0, imex1.res)
+# GS.plotAnimation(imex1.time, imex1.res)
 
-# print(type(GS.K))
-# print(GS.K.toarray())
+print(type(GS.K))
+print(GS.K.toarray())
+plt.spy(GS.K)
+plt.show()
 # temp: npt.NDArray = np.random.rand(Nx, 1)
 # spsolve(GS.K, temp)
