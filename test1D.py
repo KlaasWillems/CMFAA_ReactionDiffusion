@@ -1,19 +1,15 @@
-from timesteppers import IMEXEuler
+from timesteppers import IMEXEuler, IMEXSP, IMEXTrap
 from RDModels import GrayScott
 import numpy as np
 import numpy.typing as npt
-from scipy.sparse.linalg import spsolve
-from typing import Optional
-from scipy.sparse import csc_matrix, diags
-import matplotlib.pyplot as plt
 
 # discretization parameters
 L: int = 2
-Nx: int = 5
-Nt: int = 10
-discretization: npt.NDArray = np.array([Nx, Nx], dtype=int)
+Nx: int = 200
+discretization: npt.NDArray = np.array([Nx], dtype=int)
 tmin: float = 0.0 
-tmax: float = 0.5
+tmax: float = 1500
+Nt: int = tmax*10
 
 # Model parameters
 F: float = 0.046
@@ -33,18 +29,13 @@ u0: npt.NDArray = np.hstack((upart, vpart))
 # Make PDE object
 GS: GrayScott = GrayScott(discretization, L, Du, Dv, F, k)
 
-# Make time stepper
+# Make time stepper. Can be IMEXEuler, IMEXSP or IMEXTrap
 imex1: IMEXEuler = IMEXEuler(GS)
 
 # Integrate
-res = imex1.integrate(tmin, tmax, Nt, u0)
-# GS.plot(imex1.time, 0, imex1.res)
-# GS.plotAnimation(imex1.time, imex1.res)
+imex1.integrate(tmin, tmax, Nt, u0)
 
-
-# print(type(GS.K))
-# print(GS.K.toarray())
-# plt.spy(GS.K)
-# plt.show()
-# temp: npt.NDArray = np.random.rand(Nx, 1)
-# spsolve(GS.K, temp)
+# Plot
+imex1.plot(discretization, 0, L)
+imex1.plot(discretization, -1, L)
+# imex1.plotAnimation(discretization, L)
