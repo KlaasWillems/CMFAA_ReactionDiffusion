@@ -2,14 +2,19 @@ from timesteppers import ADI
 from RDModels import GrayScott
 import numpy as np
 import numpy.typing as npt
+import matplotlib.pyplot as plt
+import time
+
+# Simulate Gray Scott model on a 2D square grid [0, L] x [0, L] with ADI method. Images are written to a Figures/ subfolder.
 
 # discretization parameters
 L: int = 2
-Nx: int = 128
+Nx: int = 128  # Grid points in either direction
 discretization: npt.NDArray = np.array([Nx, Nx], dtype=int)
 tmin: float = 0.0 
 tmax: float = 1000
-Nt: int = tmax*4
+times: int = 10  # Simulate until t = times*tmax
+Nt: int = tmax*2  # Amount of timesteps
 
 # Model parameters
 F: float = 0.046
@@ -17,7 +22,7 @@ k: float = 0.063
 Du: float = 2e-5
 Dv: float = 1e-5
 
-# Initial condition
+# Initial condition (see section 2.2.2.3 in textbook)
 x: npt.NDArray = np.linspace(0, L, Nx, endpoint=False)
 y: npt.NDArray = np.linspace(0, L, Nx, endpoint=False)
 xv, yv = np.meshgrid(x, y)
@@ -35,9 +40,33 @@ GS: GrayScott = GrayScott(discretization, L, Du, Dv, F, k)
 # Make time stepper. Can be either IMEXEuler, IMEXSP or IMEXTrap
 imex1: ADI = ADI(GS)
 
-# Integrate
-imex1.integrate(tmin, tmax, Nt, u0)
+# integrate
+res: npt.NDArray = np.empty((2*Nx, Nx, times))
+res[:, :, 0] = u0
+for i in range(1, times):
+    tic = time.perf_counter()
+    _ = imex1.integrate(tmin, tmax, Nt, res[:, :, i-1])
+    assert imex1.res is not None
+    res[:, :, i] = imex1.res[:, :, -1]
+    toc = time.perf_counter()
+    print(f'Progress: {i/(times-1)}%. Iteration time: {toc-tic}')
 
-# Plot
-imex1.plot(discretization, -1, L)
-# imex1.plotAnimation(discretization, L)
+# plot 
+for i in range(times):
+    umatrix: npt.NDArray = res[:Nx, :, i]
+    vmatrix: npt.NDArray = res[Nx:, :, i]
+
+    fig = plt.figure()
+    plt.subplot(1, 2, 1)
+    plt.imshow(umatrix, extent=[0, L, 0, L])
+    plt.colorbar()
+    plt.title('u')
+    plt.subplot(1, 2, 2)
+    plt.imshow(vmatrix, extent=[0, L, 0, L])
+    plt.colorbar()
+    plt.title('v')
+    fig.suptitle(f'time = {tmax*i}')
+    plt.pause(0.3)
+    plt.show(block=False)
+    plt.savefig(f'Figures/fig{i}.png')
+
