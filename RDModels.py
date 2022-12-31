@@ -4,7 +4,7 @@ import numpy as np
 
 
 class GrayScott(ReactionDiffusionPDE):
-    def __init__(self, discretization: npt.NDArray, L: int, Du: float, Dv: float, Fvar: float, k: float, discretize: bool = True) -> None: 
+    def __init__(self, discretization: npt.NDArray, L: float, Du: float, Dv: float, Fvar: float, k: float, discretize: bool = True) -> None: 
         super().__init__(discretization, L, Du, Dv, discretize)
         self.k: float = k # Gray Scott model parameters
         self.Fvar: float = Fvar
@@ -26,7 +26,7 @@ class GrayScott(ReactionDiffusionPDE):
         
 
 class Schnakenberg(ReactionDiffusionPDE):
-    def __init__(self, discretization: npt.NDArray, L: int, Du: float, Dv: float, k: float, a: float, b: float, discretize: bool = True) -> None:
+    def __init__(self, discretization: npt.NDArray, L: float, Du: float, Dv: float, k: float, a: float, b: float, discretize: bool = True) -> None:
         super().__init__(discretization, L, Du, Dv, discretize)
         self.k: float = k  
         self.a: float = a

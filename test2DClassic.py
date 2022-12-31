@@ -26,7 +26,7 @@ y1 = 0.5; y2 = 0.6
 p1 = np.exp( -25*((xv - x1)**2 + (yv - y1)**2))/2
 p2 = np.exp( -25*((xv - x2)**2 + (yv - y2)**2))/2
 umatrix = np.ones_like(p1) - p1 - p2
-vmatrix = np.ones_like(p2) + p1 + p2
+vmatrix = np.zeros_like(p2) + p1 + p2
 upart = umatrix.reshape((Nx**2, ))
 vpart = vmatrix.reshape((Nx**2, ))
 u0: npt.NDArray = np.hstack((upart, vpart))

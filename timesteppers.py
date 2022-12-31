@@ -48,9 +48,11 @@ class RDTimestepper(ABC):
             plt.subplot(1, 2, 1)
             plt.imshow(umatrix, extent=[0, L, 0, L])
             plt.colorbar()
+            plt.title('u')
             plt.subplot(1, 2, 2)
             plt.imshow(vmatrix, extent=[0, L, 0, L])
             plt.colorbar()
+            plt.title('v')
             fig.suptitle(f'time = {self.time[timeIndex]}')
             plt.show()
         else:
@@ -294,9 +296,11 @@ class ADI(RDTimestepper):
         plt.subplot(1, 2, 1)
         plt.imshow(umatrix, extent=[0, L, 0, L])
         plt.colorbar()
+        plt.title('u')
         plt.subplot(1, 2, 2)
         plt.imshow(vmatrix, extent=[0, L, 0, L])
         plt.colorbar()
+        plt.title('v')
         fig.suptitle(f'time = {self.time[timeIndex]}')
         plt.show()
 

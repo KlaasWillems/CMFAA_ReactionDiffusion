@@ -9,9 +9,9 @@ MATRIX_TYPE = csc_matrix
 MATRIX_TYPE_STR = 'csc'
 
 class ReactionDiffusionPDE(ABC):
-    def __init__(self, discretization: npt.NDArray, L: int, Du: float, Dv: float, discretize=True) -> None:
+    def __init__(self, discretization: npt.NDArray, L: float, Du: float, Dv: float, discretize=True) -> None:
         self.discretization: npt.NDArray = discretization # 1D array containing the amount of discrization steps in each dimension
-        self.L: int = L # square domain size
+        self.L: float = L # square domain size
         self.Du: float = Du # u diffusion coefficient
         self.Dv: float = Dv # v diffusion coefficient
         if discretize:
