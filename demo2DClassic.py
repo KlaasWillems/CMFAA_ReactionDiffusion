@@ -1,3 +1,5 @@
+# Demo of the Gray-Scott model in 2D using the IMEX Euler scheme. Simulated until t = 1000. After the computation, the end concentrations of u and v are plotted.
+
 from timesteppers import IMEXEuler, IMEXSP, IMEXTrap
 from RDModels import GrayScott
 import numpy as np
@@ -9,7 +11,7 @@ Nx: int = 128
 discretization: npt.NDArray = np.array([Nx, Nx], dtype=int)
 tmin: float = 0.0 
 tmax: float = 1000
-Nt: int = tmax*4
+Nt: int = tmax*2
 
 # Model parameters
 F: float = 0.046
@@ -23,12 +25,12 @@ y: npt.NDArray = np.linspace(0, L, Nx, endpoint=False)
 xv, yv = np.meshgrid(x, y)
 x1 = 0.5; x2 = 0.55
 y1 = 0.5; y2 = 0.6
-p1 = np.exp( -25*((xv - x1)**2 + (yv - y1)**2))/2
-p2 = np.exp( -25*((xv - x2)**2 + (yv - y2)**2))/2
-umatrix = np.ones_like(p1) - p1 - p2
-vmatrix = np.zeros_like(p2) + p1 + p2
-upart = umatrix.reshape((Nx**2, ))
-vpart = vmatrix.reshape((Nx**2, ))
+p1: npt.NDArray = np.exp( -25*((xv - x1)**2 + (yv - y1)**2))/2
+p2: npt.NDArray = np.exp( -25*((xv - x2)**2 + (yv - y2)**2))/2
+umatrix: npt.NDArray = np.ones_like(p1) - p1 - p2  # type: ignore
+vmatrix: npt.NDArray = np.zeros_like(p2) + p1 + p2
+upart: npt.NDArray = umatrix.reshape((Nx**2, ))
+vpart: npt.NDArray = vmatrix.reshape((Nx**2, ))
 u0: npt.NDArray = np.hstack((upart, vpart))
 
 # Make PDE object
@@ -41,5 +43,5 @@ imex1: IMEXEuler = IMEXEuler(GS)
 imex1.integrate(tmin, tmax, Nt, u0)
 
 # Plot
-imex1.plot(discretization, -1, L)
-# imex1.plotAnimation(discretization, L)
+# imex1.plot(discretization, -1, L)
+imex1.plotAnimation(discretization, L, stride = 10)  # Plot concentrations (every 10 frames) 

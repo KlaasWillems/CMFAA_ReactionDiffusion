@@ -58,7 +58,7 @@ class RDTimestepper(ABC):
         else:
             raise NotImplementedError 
 
-    def plotAnimation(self, discretization: npt.NDArray, L: float) -> None:
+    def plotAnimation(self, discretization: npt.NDArray, L: float, stride: int = 1) -> None:
         # Plot u(x, t)
         assert self.res is not None
         assert self.time is not None
@@ -70,7 +70,7 @@ class RDTimestepper(ABC):
             pos: npt.NDArray = np.linspace(0, L, Nx)
 
             plt.figure()
-            for i in range(Nt):
+            for i in range(0, Nt, stride):
                 upart: npt.NDArray = self.res[i, :Nx]
                 vpart: npt.NDArray = self.res[i, Nx:]
                 plt.clf()
@@ -79,14 +79,14 @@ class RDTimestepper(ABC):
                 plt.title(f'time = {self.time[i]}')
                 plt.legend()
                 plt.xlabel('x')
-                plt.pause(0.5)
-                if i != Nt-1:
+                plt.pause(0.05)
+                if i != range(0, Nt, stride)[-1]:
                     plt.show(block=False)
                 else:
-                    plt.show()
+                    plt.show(block=True)
         elif len(discretization) == 2:
             plt.figure()
-            for i in range(Nt):
+            for i in range(0, Nt, stride):
                 upart: npt.NDArray = self.res[i, :Nx**2]
                 vpart: npt.NDArray = self.res[i, Nx**2:]
                 umatrix: npt.NDArray = upart.reshape((Nx, Nx))
@@ -100,10 +100,10 @@ class RDTimestepper(ABC):
                 plt.imshow(vmatrix, extent=[0, L, 0, L])
                 plt.colorbar()
                 plt.pause(0.05)
-                if i != Nt-1:
+                if i != range(0, Nt, stride)[-1]:
                     plt.show(block=False)
                 else:
-                    plt.show()
+                    plt.show(block=True)
         else:
             raise NotImplementedError 
 

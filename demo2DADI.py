@@ -1,3 +1,5 @@
+# Demo of the Gray-Scott model in 2D using the ADI method. Simulation takes a couple of minutes. After the computation, concentrations of u and v are plotted from some values of time.
+
 from timesteppers import ADI
 from RDModels import GrayScott
 import numpy as np
@@ -5,15 +7,13 @@ import numpy.typing as npt
 import matplotlib.pyplot as plt
 import time
 
-# Simulate Gray Scott model on a 2D square grid [0, L] x [0, L] with ADI method. Images are written to a Figures/ subfolder.
-
 # discretization parameters
-L: int = 2
+L: int = 2  # Simulation domain [0, L] x [0, L]
 Nx: int = 128  # Grid points in either direction
 discretization: npt.NDArray = np.array([Nx, Nx], dtype=int)
 tmin: float = 0.0 
 tmax: float = 1000
-times: int = 10  # Simulate until t = times*tmax
+times: int = 10  # Simulation happens in stages of 1000 seconds. This is repeated 10 times. 
 Nt: int = tmax*2  # Amount of timesteps
 
 # Model parameters
@@ -52,11 +52,11 @@ for i in range(1, times):
     print(f'Progress: {i/(times-1)}%. Iteration time: {toc-tic}')
 
 # plot 
+fig = plt.figure()
 for i in range(times):
     umatrix: npt.NDArray = res[:Nx, :, i]
     vmatrix: npt.NDArray = res[Nx:, :, i]
 
-    fig = plt.figure()
     plt.subplot(1, 2, 1)
     plt.imshow(umatrix, extent=[0, L, 0, L])
     plt.colorbar()
@@ -66,7 +66,10 @@ for i in range(times):
     plt.colorbar()
     plt.title('v')
     fig.suptitle(f'time = {tmax*i}')
-    plt.pause(0.3)
-    plt.show(block=False)
-    plt.savefig(f'Figures/fig{i}.png')
+    plt.pause(0.8)
+    if i != times-1: 
+        plt.show(block=False)
+    else:
+        plt.show(block=True)
+    # plt.savefig(f'Figures/fig{i}.png')
 
