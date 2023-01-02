@@ -36,6 +36,7 @@ class RDTimestepper(ABC):
             plt.title(f'time = {self.time[timeIndex]}')
             plt.legend()
             plt.xlabel(('x'))
+            plt.ylim([-0.1, 1.1])
             if saveFile is not None: plt.savefig(saveFile, dpi=1200)
             plt.show()
         elif len(discretization) == 2:
