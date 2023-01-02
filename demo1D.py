@@ -5,12 +5,13 @@ from RDModels import GrayScott
 import numpy as np
 import numpy.typing as npt
 
+
 # discretization parameters
 L: int = 2
 Nx: int = 400
 discretization: npt.NDArray = np.array([Nx], dtype=int)
 tmin: float = 0.0 
-tmax: float = 200
+tmax: float = 400
 Nt: int = tmax*10
 
 # Model parameters
@@ -39,6 +40,7 @@ imex1: IMEXEuler = IMEXEuler(GS)
 imex1.integrate(tmin, tmax, Nt, u0)
 
 # Plot
-# imex1.plot(discretization, 0, L)
-# imex1.plot(discretization, -1, L)
-imex1.plotAnimation(discretization, L)
+# imex1.plot(discretization, 0, L, saveFile='Figures/Report/demo1Dinit.pdf')
+# imex1.plot(discretization, int(Nt/8), L, saveFile='Figures/Report/demo1Dmiddle.pdf')
+# imex1.plot(discretization, -1, L, saveFile='Figures/Report/demo1Dfinal.pdf')
+imex1.plotAnimation(discretization, L, stride = 100)

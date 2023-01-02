@@ -19,7 +19,7 @@ class RDTimestepper(ABC):
     def integrate(self, tMin: float, tMax: float, N: int, u0: npt.NDArray) -> npt.NDArray:
         pass
 
-    def plot(self, discretization: npt.NDArray, timeIndex: int, L: float) -> None:
+    def plot(self, discretization: npt.NDArray, timeIndex: int, L: float, saveFile: Optional[str] = None) -> None:
         # Plot solution at timeIndex
         assert self.res is not None
         assert self.time is not None
@@ -36,6 +36,7 @@ class RDTimestepper(ABC):
             plt.title(f'time = {self.time[timeIndex]}')
             plt.legend()
             plt.xlabel(('x'))
+            if saveFile is not None: plt.savefig(saveFile, dpi=1200)
             plt.show()
         elif len(discretization) == 2:
             Nx: int = discretization[0]
@@ -54,6 +55,7 @@ class RDTimestepper(ABC):
             plt.colorbar()
             plt.title('v')
             fig.suptitle(f'time = {self.time[timeIndex]}')
+            if saveFile is not None: plt.savefig(saveFile, dpi=1200)
             plt.show()
         else:
             raise NotImplementedError 
