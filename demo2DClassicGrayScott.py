@@ -1,4 +1,5 @@
-# Demo of the Gray-Scott model in 2D using the IMEX Euler scheme. Simulated until t = 1000. After the computation, the end concentrations of u and v are plotted.
+# Demo of the Gray-Scott model in 2D using the IMEX Euler scheme. 
+#   Simulated until t = 2000 on a 128**2 grid. After the computation, the end concentrations of u and v are plotted.
 
 from timesteppers import IMEXEuler, IMEXSP, IMEXTrap
 from RDModels import GrayScott
@@ -10,7 +11,7 @@ L: int = 2
 Nx: int = 128
 discretization: npt.NDArray = np.array([Nx, Nx], dtype=int)
 tmin: float = 0.0 
-tmax: float = 1000
+tmax: float = 2000
 Nt: int = tmax*2
 
 # Model parameters
@@ -44,4 +45,4 @@ imex1.integrate(tmin, tmax, Nt, u0)
 
 # Plot
 # imex1.plot(discretization, -1, L)
-imex1.plotAnimation(discretization, L, stride = 10)  # Plot concentrations (every 10 frames) 
+imex1.plotAnimation(discretization, L, stride = 20)  # Plot concentrations (every 'stride' frames) 

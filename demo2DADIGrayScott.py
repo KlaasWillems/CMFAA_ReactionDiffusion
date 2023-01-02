@@ -1,4 +1,7 @@
-# Demo of the Gray-Scott model in 2D using the ADI method. Simulation takes a couple of minutes. After the computation, concentrations of u and v are plotted from some values of time.
+# Demo of the Gray-Scott model in 2D using the ADI method. 
+#   Simulation on a 128**2 grid up to t = 1e4 in ten steps of 1e3
+#   Simulation takes a couple of minutes. After the computation, concentrations of u and v are plotted from some values of time.
+#   Figures can be saved by uncommenting final line
 
 from timesteppers import ADI
 from RDModels import GrayScott
@@ -49,7 +52,7 @@ for i in range(1, times):
     assert imex1.res is not None
     res[:, :, i] = imex1.res[:, :, -1]
     toc = time.perf_counter()
-    print(f'Progress: {i/(times-1)}%. Iteration time: {toc-tic}')
+    print(f'Progress: {i/(times-1)}%. Iteration time: {toc-tic} sec')
 
 # plot 
 fig = plt.figure()
