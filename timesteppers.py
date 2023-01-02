@@ -1,3 +1,5 @@
+# File contains all three IMEX schemes and the ADI method. 
+
 from abc import ABC, abstractmethod
 import numpy as np
 import numpy.typing as npt
@@ -10,17 +12,23 @@ import matplotlib.pyplot as plt
 
 class RDTimestepper(ABC):
     # Timestepper for reaction diffusion equations
+    #   All methods inherit from this base class. It contains the datastructures common to all routines and provides methods for plotting results.
     def __init__(self, RDEquation: ReactionDiffusionPDE) -> None:
         self.res: Optional[npt.NDArray] = None # After integration, rows contain solution at time steps
         self.time: Optional[npt.NDArray] = None # After integration, time at which solution is computed
-        self.RDEquation: ReactionDiffusionPDE = RDEquation
+        self.RDEquation: ReactionDiffusionPDE = RDEquation  # Reaction-Diffusion equation object
 
     @abstractmethod
     def integrate(self, tMin: float, tMax: float, N: int, u0: npt.NDArray) -> npt.NDArray:
+        # Integration scheme is implemented here. Must be overriden by subclasses.
         pass
 
     def plot(self, discretization: npt.NDArray, timeIndex: int, L: float, saveFile: Optional[str] = None) -> None:
-        # Plot solution at timeIndex
+        # Plot solution 
+        #   discretization: 1D array contain the grid points in all directions
+        #   timeIndex: index in self.res? 0 and -1 for first and final results.
+        #   L: square domain size. For setting the axis of the plots
+        #   saveFile: if not None, plot is saved at location
         assert self.res is not None
         assert self.time is not None
         if len(discretization) == 1:
@@ -63,6 +71,7 @@ class RDTimestepper(ABC):
 
     def plotAnimation(self, discretization: npt.NDArray, L: float, stride: int = 1) -> None:
         # Plot u(x, t)
+        #   stride: e.g. 10 -> every 10 results are plotted. 
         assert self.res is not None
         assert self.time is not None
 
@@ -113,6 +122,7 @@ class RDTimestepper(ABC):
 
 
 class IMEXEuler(RDTimestepper):
+    # IMEX Euler implementation
     def __init__(self, RDEquation: ReactionDiffusionPDE) -> None:
         super().__init__(RDEquation)
 
@@ -127,12 +137,12 @@ class IMEXEuler(RDTimestepper):
         I: MATRIX_TYPE = eye(m=s[0], n=s[1], format=MATRIX_TYPE_STR) # type: ignore
         Au: MATRIX_TYPE = I - dt*self.RDEquation.Ku
         Av: MATRIX_TYPE = I - dt*self.RDEquation.Kv
-        solveU = factorized(Au)
+        solveU = factorized(Au)  # calculate LU factorization
         solveV = factorized(Av)
 
         self.res[0, :] = u0
         uTemp: npt.NDArray = np.empty_like(u0)
-        for i in range(1, N):
+        for i in range(1, N):  # timestep
             # Explicit step of Fex
             uTemp = self.RDEquation.Fex(self.res[i-1, :], self.time[i-1])
             uTemp = self.res[i-1, :] + dt*uTemp
@@ -144,6 +154,7 @@ class IMEXEuler(RDTimestepper):
 
 
 class IMEXSP(RDTimestepper):
+    # IMEX SP (splitting) method implementation
     def __init__(self, RDEquation: ReactionDiffusionPDE) -> None:
         super().__init__(RDEquation)
     
@@ -158,12 +169,12 @@ class IMEXSP(RDTimestepper):
         I: MATRIX_TYPE = eye(m=s[0], n=s[1], format=MATRIX_TYPE_STR) # type:ignore
         Au: MATRIX_TYPE = I - dt*self.RDEquation.Ku
         Av: MATRIX_TYPE = I - dt*self.RDEquation.Kv
-        solveU = factorized(Au)
+        solveU = factorized(Au)  # calculate LU factorization
         solveV = factorized(Av)
 
         self.res[0, :] = u0
         uTemp: npt.NDArray = np.empty_like(u0)
-        for i in range(1, N):
+        for i in range(1, N):  # timestep
             # Implicit step
             uTemp[:s[0]] = solveU(self.res[i-1, :s[0]])
             uTemp[s[0]:] = solveV(self.res[i-1, s[0]:])
@@ -174,6 +185,7 @@ class IMEXSP(RDTimestepper):
 
 
 class IMEXTrap(RDTimestepper):
+    # IMEX trapezoidal implementation
     def __init__(self, RDEquation: ReactionDiffusionPDE) -> None:
         super().__init__(RDEquation)
 
@@ -188,13 +200,13 @@ class IMEXTrap(RDTimestepper):
         I: MATRIX_TYPE = eye(m=s[0], n=s[1], format=MATRIX_TYPE_STR) # type:ignore
         Au: MATRIX_TYPE = I - dt*self.RDEquation.Ku/2
         Av: MATRIX_TYPE = I - dt*self.RDEquation.Kv/2
-        solveU = factorized(Au)
+        solveU = factorized(Au)  # calculate LU factorization
         solveV = factorized(Av)
 
         self.res[0, :] = u0
         uTemp1: npt.NDArray = np.empty_like(u0)
         uTemp2: npt.NDArray = np.empty_like(u0)
-        for i in range(1, N):
+        for i in range(1, N):  # timestep
             # Implicit step
             uTemp1 = self.res[i-1, :] + dt*self.RDEquation.Fex(self.res[i-1, :], self.time[i-1]) + self.RDEquation.Fim(self.res[i-1, :], self.time[i-1])*dt/2
             uTemp2[:s[0]] = solveU(uTemp1[:s[0]])
@@ -205,8 +217,8 @@ class IMEXTrap(RDTimestepper):
         return self.res
 
 
-# Solves 2D domain with succesive sweeps in x and y direction. Square integration domain (alfa = beta = D*dt/(2*dx**2))
 class ADI(RDTimestepper):
+    # ADI (alternating direction implicit) method implementation
     def __init__(self, RDEquation: ReactionDiffusionPDE) -> None:
         super().__init__(RDEquation)
 
@@ -223,9 +235,9 @@ class ADI(RDTimestepper):
         Nx2: int = int(Nx**2)
         dx: float = self.RDEquation.L/(Nx-1)
 
-        # Build matrices for nearly tridiagonal system
+        # Build matrices for nearly tridiagonal system. See document from exercise session for matrix structure
         coeff: float = dt2/(dx**2)
-        alfau: float = coeff*self.RDEquation.Du
+        alfau: float = coeff*self.RDEquation.Du  # (alfa = beta = Di*dt/(2*dx**2))
         alfav: float = coeff*self.RDEquation.Dv
         Au: MATRIX_TYPE = diags([-alfau, -alfau, 1+2*alfau, -alfau, -alfau], [-Nx+1, -1, 0, 1, Nx-1], format=MATRIX_TYPE_STR, shape=(Nx, Nx)) # type: ignore
         Av: MATRIX_TYPE = diags([-alfav, -alfav, 1+2*alfav, -alfav, -alfav], [-Nx+1, -1, 0, 1, Nx-1], format=MATRIX_TYPE_STR, shape=(Nx, Nx)) # type: ignore
@@ -236,11 +248,11 @@ class ADI(RDTimestepper):
         self.res = np.empty((2*Nx, Nx, N))  # Final result stored tensor. U and V stacked vertically
         self.res[:, :, 0] = u0 # u matrix at t = 0
 
+        # Pre-allocate temporary variables
         fuv: npt.NDArray = np.empty_like(u0)
         uHalf: npt.NDArray = np.empty((Nx, Nx))
         vHalf: npt.NDArray = np.empty((Nx, Nx))
-
-        for i in range(1, N):
+        for i in range(1, N): # timestep
             # step 1
             fuv = self.RDEquation.Fex(self.res[:, :, i-1], self.time[i-1])
             uHalf = self.ADIStep1(solveU, alfau, dt2, self.res[:Nx, :, i-1], fuv[:Nx, :])
@@ -254,12 +266,14 @@ class ADI(RDTimestepper):
             self.res[Nx:, :, i] = self.ADIStep2(solveV, alfav, dt2, vHalf, fuv[Nx:, :])
         return self.res
 
+    # TODO: parallelize loop
     def ADIStep1(self, LuSolve, alfa: float, dt2: float, uOld: npt.NDArray, FuOld: npt.NDArray) -> npt.NDArray:
-        # LuSolve: matrix with 1+alfa, -alfa/2 and -alfa/2 on its diagonals
-        # alfa: Du*dt/(2*dx**2)
-        # dt2: timestep/2 
-        # uOld: (Nx, Nx) matrix 
-        # FuOld: reaction terms evaluated at uOld. Also, (Nx, Nx) matrix
+        # Implements 'x-sweep' of ADI method
+        #   LuSolve: matrix with 1+alfa, -alfa/2 and -alfa/2 on its diagonals
+        #   alfa: Du*dt/(2*dx**2)
+        #   dt2: timestep/2 
+        #   uOld: (Nx, Nx) matrix 
+        #   FuOld: reaction terms evaluated at uOld. Also, (Nx, Nx) matrix
 
         uHalf: npt.NDArray = np.empty_like(uOld)
         rows, cols = np.shape(uOld)
@@ -273,7 +287,9 @@ class ADI(RDTimestepper):
 
         return uHalf
 
+    # TODO: parallelize loop
     def ADIStep2(self, LuSolve, alfa: float, dt2: float, uHalf: npt.NDArray, FuHalf: npt.NDArray) -> npt.NDArray:
+        # Implements 'x-sweep' of ADI method. Argument analogous to ADIStep1
         uFull: npt.NDArray = np.empty_like(uHalf)
         rows, cols = np.shape(uHalf)
 
@@ -287,7 +303,7 @@ class ADI(RDTimestepper):
         return uFull
 
     def plot(self, discretization: npt.NDArray, timeIndex: int, L: float, saveFile: Optional[str] = None) -> None:
-        # Plot solution at timeIndex. The ADI method stores results in a different format, therefore this methods overrides the base one.
+        # Overrides plot method from baseclass because the ADI method stores the results in matrix format, not vectorized.
         assert self.res is not None
         assert self.time is not None
         assert len(discretization) == 2
