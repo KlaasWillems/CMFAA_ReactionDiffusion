@@ -35,7 +35,7 @@ vmatrix = np.zeros_like(p2) + p1 + p2
 u0: npt.NDArray = np.vstack((umatrix, vmatrix))
 
 # Make PDE object
-GS: GrayScott = GrayScott(discretization, L, Du, Dv, F, k)
+GS: GrayScott = GrayScott(discretization, L, Du, Dv, F, k, discretize=False)
 
 # Make time stepper. Can be either IMEXEuler, IMEXSP or IMEXTrap
 imex1: ADI = ADI(GS)

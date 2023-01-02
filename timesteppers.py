@@ -286,7 +286,7 @@ class ADI(RDTimestepper):
         
         return uFull
 
-    def plot(self, discretization: npt.NDArray, timeIndex: int, L: float) -> None:
+    def plot(self, discretization: npt.NDArray, timeIndex: int, L: float, saveFile: Optional[str] = None) -> None:
         # Plot solution at timeIndex. The ADI method stores results in a different format, therefore this methods overrides the base one.
         assert self.res is not None
         assert self.time is not None
@@ -295,15 +295,10 @@ class ADI(RDTimestepper):
         umatrix: npt.NDArray = self.res[:Nx, :, timeIndex]
         vmatrix: npt.NDArray = self.res[Nx:, :, timeIndex]
 
-        fig = plt.figure()
-        plt.subplot(1, 2, 1)
+        plt.figure()
         plt.imshow(umatrix, extent=[0, L, 0, L])
         plt.colorbar()
-        plt.title('u')
-        plt.subplot(1, 2, 2)
-        plt.imshow(vmatrix, extent=[0, L, 0, L])
-        plt.colorbar()
-        plt.title('v')
-        fig.suptitle(f'time = {self.time[timeIndex]}')
+        plt.title(f'time = {self.time[timeIndex]}')
+        if saveFile is not None: plt.savefig(saveFile, dpi=1200)
         plt.show()
 

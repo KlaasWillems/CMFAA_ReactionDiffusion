@@ -37,7 +37,6 @@ class Schnakenberg(ReactionDiffusionPDE):
 
     def Fex(self, u: npt.NDArray, t: float) -> npt.NDArray:
         # Evaluate explicit reaction term at u at time t.
-        assert u.ndim == 1
         res: npt.NDArray = np.empty_like(u)
         m: int = np.shape(u)[0]
         m2: int = int(m/2)
